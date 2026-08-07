@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="theme-color"
+        content="#090d14"
+    >
+
+    <title>
+        Gym Check-In
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+
+</head>
+
+
+<body>
+
+<main class="container">
+
+    <header class="header">
+
+        <h1>
+            Gym Check-In
+        </h1>
+
+        <p>
+            NFC Fitness Tracker
+        </p>
+
+    </header>
+
+
+    <section class="clock">
+
+        <div id="date">
+        </div>
+
+        <div id="time">
+        </div>
+
+    </section>
+
+
+    <form id="checkinForm">
+
+        <label for="name">
+            Name
+        </label>
+
+        <input
+            id="name"
+            name="name"
+            type="text"
+            autocomplete="name"
+            placeholder="Your name"
+            maxlength="100"
+            required
+        >
+
+
+        <label for="weight">
+            Current Weight
+        </label>
+
+
+        <div class="measurement">
+
+            <input
+                id="weight"
+                name="weight"
+                type="number"
+                inputmode="decimal"
+                min="1"
+                max="1500"
+                step="0.1"
+                placeholder="181.0"
+                required
+            >
+
+            <span>
+                lb
+            </span>
+
+        </div>
+
+
+        <label for="bloodPressure">
+            Current Blood Pressure
+        </label>
+
+
+        <div class="measurement">
+
+            <input
+                id="bloodPressure"
+                name="bloodPressure"
+                type="text"
+                inputmode="text"
+                autocomplete="off"
+                placeholder="120/80"
+                maxlength="7"
+                required
+            >
+
+            <span>
+                mmHg
+            </span>
+
+        </div>
+
+
+        <button
+            id="submitButton"
+            type="submit"
+        >
+            LOG CHECK-IN
+        </button>
+
+    </form>
+
+
+    <div
+        id="message"
+        class="message"
+        role="status"
+        aria-live="polite"
+    >
+    </div>
+
+</main>
+
+
+<script>
+
+const form =
+    document.getElementById(
+        "checkinForm"
+    );
+
+
+const nameField =
+    document.getElementById(
+        "name"
+    );
+
+
+const weightField =
+    document.getElementById(
+        "weight"
+    );
+
+
+const bloodPressureField =
+    document.getElementById(
+        "bloodPressure"
+    );
+
+
+const submitButton =
+    document.getElementById(
+        "submitButton"
+    );
+
+
+const message =
+    document.getElementById(
+        "message"
+    );
+
+
+/*
+ * Remember the name locally.
+ *
+ * After the first visit the user
+ * normally only needs to enter:
+ *
+ * weight
+ * blood pressure
+ */
+
+const storedName =
+    localStorage.getItem(
+        "gymTrackerName"
+    );
+
+
+if (storedName) {
+    nameField.value =
+        storedName;
+}
+
+
+/*
+ * Display current phone date/time.
+ */
+
+function updateClock() {
+
+    const now =
+        new Date();
+
+
+    document.getElementById(
+        "date"
+    ).textContent =
+        now.toLocaleDateString(
+            "en-US",
+            {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            }
+        );
+
+
+    document.getElementById(
+        "time"
+    ).textContent =
+        now.toLocaleTimeString(
+            "en-US",
+            {
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit"
+            }
+        );
+
+}
+
+
+updateClock();
+
+
+setInterval(
+    updateClock,
+    1000
+);
+
+
+/*
+ * Form submission
+ */
+
+form.addEventListener(
+    "submit",
+
+    async function(event) {
+
+        event.preventDefault();
+
+
+        const name =
+            nameField
+                .value
+                .trim();
+
+
+        const weight =
+            weightField
+                .value;
+
+
+        const bloodPressure =
+            bloodPressureField
+                .value
+                .trim();
+
+
+        localStorage.setItem(
+            "gymTrackerName",
+            name
+        );
+
+
+        submitButton.disabled =
+            true;
+
+
+        submitButton.textContent =
+            "SAVING...";
+
+
+        message.textContent =
+            "";
+
+
+        message.className =
+            "message";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/checkin",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+                                name:
+                                    name,
+
+                                weight:
+                                    weight,
+
+                                blood_pressure:
+                                    bloodPressure,
+
+                                client_timestamp:
+                                    new Date()
+                                        .toISOString()
+                            })
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.error
+                    ||
+                    "Unable to save check-in."
+                );
+
+            }
+
+
+            message.textContent =
+                "Check-in logged successfully.";
+
+
+            message.className =
+                "message success";
+
+
+            weightField.value =
+                "";
+
+
+            bloodPressureField.value =
+                "";
+
+
+            weightField.focus();
+
+        }
+
+        catch (error) {
+
+            message.textContent =
+                error.message;
+
+
+            message.className =
+                "message error";
+
+        }
+
+        finally {
+
+            submitButton.disabled =
+                false;
+
+
+            submitButton.textContent =
+                "LOG CHECK-IN";
+
+        }
+
+    }
+
+);
+
+</script>
+
+</body>
+
+</html>
