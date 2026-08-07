@@ -24,3 +24,14 @@ resource "google_project_iam_member" "firestore_access" {
     google_firestore_database.database
   ]
 }
+resource "google_project_iam_member" "cloudbuild_artifact_writer" {
+  project = local.project_id
+
+  role = "roles/artifactregistry.writer"
+
+  member = "serviceAccount:${data.google_project.current.number}@cloudbuild.gserviceaccount.com"
+
+  depends_on = [
+    google_project_service.required_apis
+  ]
+}
