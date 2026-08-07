@@ -12,28 +12,21 @@ resource "terraform_data" "build_app" {
     command = <<-EOT
       set -e
 
-      echo "Configuring Docker authentication..."
+      echo "Submitting application to Google Cloud Build..."
 
-      gcloud auth configure-docker \
-        ${var.region}-docker.pkg.dev \
+      gcloud builds submit \
+        "${path.module}/../app" \
+        --project="${local.project_id}" \
+        --region="${var.region}" \
+        --tag="${local.image_uri}" \
         --quiet
 
-      echo "Building Docker image..."
-
-      docker build \
-        -t "${local.image_uri}" \
-        "${path.module}/../app"
-
-      echo "Pushing Docker image..."
-
-      docker push \
-        "${local.image_uri}"
-
-      echo "Docker image successfully pushed."
+      echo "Cloud Build completed successfully."
     EOT
   }
 
   depends_on = [
-    google_artifact_registry_repository.app
+    google_artifact_registry_repository.app,
+    google_project_service.required_apis
   ]
 }
