@@ -14,9 +14,7 @@ locals {
         "",
         [
           for file in local.app_files :
-          filesha256(
-            "${path.module}/../app/${file}"
-          )
+          filesha256("${path.module}/../app/${file}")
         ]
       )
     ),
@@ -24,11 +22,5 @@ locals {
     12
   )
 
-  image_uri = (
-    "${var.region}-docker.pkg.dev/"
-    "${local.project_id}/"
-    "${var.repository_name}/"
-    "${var.service_name}:"
-    "${local.source_hash}"
-  )
+  image_uri = "${var.region}-docker.pkg.dev/${local.project_id}/${var.repository_name}/${var.service_name}:${local.source_hash}"
 }
